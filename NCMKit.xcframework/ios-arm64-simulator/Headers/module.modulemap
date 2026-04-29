@@ -1,0 +1,5 @@
+module NCMKit {
+  umbrella header "NCMKit.h"
+
+  export *
+}

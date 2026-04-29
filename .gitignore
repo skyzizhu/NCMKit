@@ -1,0 +1,8 @@
+.DS_Store
+build/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+.idea/
+.vscode/
+vendor/**/.git
