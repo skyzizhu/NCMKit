@@ -15,6 +15,10 @@ static NSError *NCMKitMakeError(NCMKitErrorCode code, NSString *description) {
 + (nullable NSString *)convertFileAtPath:(NSString *)inputPath
                          outputDirectory:(nullable NSString *)outputDirectory
                                    error:(NSError * _Nullable * _Nullable)error {
+    if (error != nil) {
+        *error = nil;
+    }
+
     if (inputPath.length == 0) {
         if (error != nil) {
             *error = NCMKitMakeError(NCMKitErrorCodeInvalidInput, @"inputPath must not be empty.");

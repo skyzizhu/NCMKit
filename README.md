@@ -90,14 +90,40 @@ import NCMKit
 import Foundation
 import NCMKit
 
+enum NCMConversionError: LocalizedError {
+    case invalidInput(String)
+    case conversionFailed(String)
+    case underlying(NSError)
+
+    init(nsError: NSError) {
+        guard nsError.domain == NCMKitErrorDomain else {
+            self = .underlying(nsError)
+            return
+        }
+
+        switch nsError.code {
+        case NCMKitErrorCode.invalidInput.rawValue:
+            self = .invalidInput(nsError.localizedDescription)
+        case NCMKitErrorCode.conversionFailed.rawValue:
+            self = .conversionFailed(nsError.localizedDescription)
+        default:
+            self = .underlying(nsError)
+        }
+    }
+}
+
 enum NCMConverter {
     @discardableResult
     static func convert(fileURL: URL, outputDirectory: URL? = nil) throws -> URL {
-        let outputPath = try NCMKit.convert(
-            inputPath: fileURL.path,
-            outputDirectory: outputDirectory?.path
-        )
-        return URL(fileURLWithPath: outputPath)
+        do {
+            let outputPath = try NCMKit.convert(
+                inputPath: fileURL.path,
+                outputDirectory: outputDirectory?.path
+            )
+            return URL(fileURLWithPath: outputPath)
+        } catch let error as NSError {
+            throw NCMConversionError(nsError: error)
+        }
     }
 }
 ```
@@ -105,10 +131,17 @@ enum NCMConverter {
 直接调用：
 
 ```swift
-let outputURL = try NCMConverter.convert(
-    fileURL: inputURL,
-    outputDirectory: outputDirectoryURL
-)
+do {
+    let outputURL = try NCMConverter.convert(
+        fileURL: inputURL,
+        outputDirectory: outputDirectoryURL
+    )
+    print("转换成功: \(outputURL.path)")
+} catch let error as NCMConversionError {
+    print("转换失败: \(error.localizedDescription)")
+} catch {
+    print("未知错误: \(error.localizedDescription)")
+}
 ```
 
 ## Objective-C / Objective-C++ 接口
@@ -124,6 +157,21 @@ let outputURL = try NCMConverter.convert(
 ```
 
 返回值为输出音频文件路径。失败时返回 `nil`，并通过 `NSError` 返回错误信息。
+
+Objective-C 调用示例：
+
+```objc
+NSError *error = nil;
+NSString *outputPath = [NCMKit convertFileAtPath:inputPath
+                                 outputDirectory:outputDirectory
+                                           error:&error];
+
+if (outputPath != nil) {
+    NSLog(@"转换成功: %@", outputPath);
+} else {
+    NSLog(@"转换失败: %@", error.localizedDescription);
+}
+```
 
 ## 构建方式
 
